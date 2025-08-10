@@ -1,9 +1,75 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import Icon from "@/components/ui/icon";
+import { useState, useEffect } from "react";
 
 const Index = () => {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [animatedStats, setAnimatedStats] = useState({
+    projects: 0,
+    clients: 0,
+    years: 0
+  });
+  const [formData, setFormData] = useState({
+    name: '',
+    company: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+
+  // Анимация счетчиков
+  useEffect(() => {
+    const animateStats = () => {
+      const targets = { projects: 150, clients: 50, years: 7 };
+      const duration = 2000;
+      const steps = 50;
+      const interval = duration / steps;
+
+      let step = 0;
+      const timer = setInterval(() => {
+        step++;
+        const progress = step / steps;
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+
+        setAnimatedStats({
+          projects: Math.round(targets.projects * easeOut),
+          clients: Math.round(targets.clients * easeOut),
+          years: Math.round(targets.years * easeOut)
+        });
+
+        if (step >= steps) {
+          clearInterval(timer);
+          setAnimatedStats(targets);
+        }
+      }, interval);
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        animateStats();
+        observer.disconnect();
+      }
+    });
+
+    const statsElement = document.getElementById('stats-section');
+    if (statsElement) observer.observe(statsElement);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Здесь будет логика отправки формы
+    console.log('Форма отправлена:', formData);
+    setIsFormOpen(false);
+    setFormData({ name: '', company: '', email: '', phone: '', message: '' });
+  };
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
@@ -47,10 +113,75 @@ const Index = () => {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-open-sans">
-                  <Icon name="Shield" className="w-5 h-5 mr-2" />
-                  Провести аудит
-                </Button>
+                <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-open-sans">
+                      <Icon name="Shield" className="w-5 h-5 mr-2" />
+                      Провести аудит
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle className="font-montserrat">Заявка на аудит ИБ</DialogTitle>
+                      <DialogDescription className="font-open-sans">
+                        Заполните форму и мы свяжемся с вами для обсуждения деталей аудита
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleFormSubmit} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Имя *</Label>
+                          <Input
+                            id="name"
+                            value={formData.name}
+                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="company">Компания *</Label>
+                          <Input
+                            id="company"
+                            value={formData.company}
+                            onChange={(e) => setFormData({...formData, company: e.target.value})}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({...formData, email: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Телефон</Label>
+                        <Input
+                          id="phone"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="message">Дополнительная информация</Label>
+                        <Textarea
+                          id="message"
+                          value={formData.message}
+                          onChange={(e) => setFormData({...formData, message: e.target.value})}
+                          placeholder="Опишите специфику вашей ИТ-инфраструктуры..."
+                        />
+                      </div>
+                      <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
+                        <Icon name="Send" className="w-4 h-4 mr-2" />
+                        Отправить заявку
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
                 <Button variant="outline" size="lg" className="font-open-sans">
                   <Icon name="Phone" className="w-5 h-5 mr-2" />
                   Консультация
@@ -120,25 +251,76 @@ const Index = () => {
                 features: ["24/7 мониторинг", "Инцидент-менеджмент", "Обновления"]
               }
             ].map((service, index) => (
-              <Card key={index} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                <CardHeader>
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                    <Icon name={service.icon as any} className="w-6 h-6 text-primary" />
+              <Dialog key={index}>
+                <DialogTrigger asChild>
+                  <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+                    <CardHeader>
+                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                        <Icon name={service.icon as any} className="w-6 h-6 text-primary" />
+                      </div>
+                      <CardTitle className="font-montserrat text-xl">{service.title}</CardTitle>
+                      <CardDescription className="font-open-sans">{service.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2">
+                        {service.features.map((feature, idx) => (
+                          <li key={idx} className="flex items-center text-sm font-open-sans">
+                            <Icon name="Check" className="w-4 h-4 text-accent mr-2" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-4 flex items-center text-sm text-primary font-open-sans">
+                        <span>Подробнее</span>
+                        <Icon name="ArrowRight" className="w-4 h-4 ml-1" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle className="font-montserrat flex items-center">
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mr-3">
+                        <Icon name={service.icon as any} className="w-5 h-5 text-primary" />
+                      </div>
+                      {service.title}
+                    </DialogTitle>
+                    <DialogDescription className="font-open-sans">
+                      {service.description}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold font-montserrat mb-3">Что включает услуга:</h4>
+                      <ul className="space-y-2">
+                        {service.features.map((feature, idx) => (
+                          <li key={idx} className="flex items-center text-sm font-open-sans">
+                            <Icon name="Check" className="w-4 h-4 text-accent mr-2 flex-shrink-0" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    {index === 0 && (
+                      <div className="bg-card p-4 rounded-lg">
+                        <h4 className="font-semibold font-montserrat mb-2">Этапы аудита:</h4>
+                        <ol className="text-sm font-open-sans space-y-1 text-muted-foreground">
+                          <li>1. Предварительный анализ инфраструктуры</li>
+                          <li>2. Тестирование на проникновение</li>
+                          <li>3. Анализ политик безопасности</li>
+                          <li>4. Подготовка детального отчета</li>
+                        </ol>
+                      </div>
+                    )}
+                    <div className="flex gap-2 pt-4">
+                      <Button className="flex-1 bg-primary hover:bg-primary/90" onClick={() => setIsFormOpen(true)}>
+                        <Icon name="MessageSquare" className="w-4 h-4 mr-2" />
+                        Получить консультацию
+                      </Button>
+                    </div>
                   </div>
-                  <CardTitle className="font-montserrat text-xl">{service.title}</CardTitle>
-                  <CardDescription className="font-open-sans">{service.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {service.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center text-sm font-open-sans">
-                        <Icon name="Check" className="w-4 h-4 text-accent mr-2" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+                </DialogContent>
+              </Dialog>
             ))}
           </div>
         </div>
@@ -170,18 +352,23 @@ const Index = () => {
                 </p>
               </div>
               
-              <div className="grid grid-cols-2 gap-6">
-                {[
-                  { number: "150+", label: "Проектов реализовано" },
-                  { number: "50+", label: "Довольных клиентов" },
-                  { number: "7", label: "Лет опыта" },
-                  { number: "24/7", label: "Техподдержка" }
-                ].map((stat, index) => (
-                  <div key={index} className="text-center">
-                    <div className="text-3xl font-montserrat font-bold text-primary">{stat.number}</div>
-                    <div className="text-sm font-open-sans text-muted-foreground">{stat.label}</div>
-                  </div>
-                ))}
+              <div id="stats-section" className="grid grid-cols-2 gap-6">
+                <div className="text-center">
+                  <div className="text-3xl font-montserrat font-bold text-primary">{animatedStats.projects}+</div>
+                  <div className="text-sm font-open-sans text-muted-foreground">Проектов реализовано</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-montserrat font-bold text-primary">{animatedStats.clients}+</div>
+                  <div className="text-sm font-open-sans text-muted-foreground">Довольных клиентов</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-montserrat font-bold text-primary">{animatedStats.years}</div>
+                  <div className="text-sm font-open-sans text-muted-foreground">Лет опыта</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-montserrat font-bold text-primary">24/7</div>
+                  <div className="text-sm font-open-sans text-muted-foreground">Техподдержка</div>
+                </div>
               </div>
             </div>
           </div>
@@ -239,7 +426,7 @@ const Index = () => {
                 <p className="font-open-sans text-muted-foreground mb-6">
                   Оставьте заявку и получите индивидуальное предложение по аудиту ИБ для вашей организации
                 </p>
-                <Button size="lg" className="bg-primary hover:bg-primary/90">
+                <Button size="lg" className="bg-primary hover:bg-primary/90" onClick={() => setIsFormOpen(true)}>
                   <Icon name="Mail" className="w-5 h-5 mr-2" />
                   Запросить предложение
                 </Button>
